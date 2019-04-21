@@ -7,7 +7,7 @@
 """
 
 import os
-
+import numpy as np
 
 def get_file_path(dir_name):
     file_list = os.listdir(dir_name)
@@ -22,9 +22,15 @@ def get_file_path(dir_name):
     return files
 
 def get_file_name(img_path):
-    name = img_path.split('\\')[-1]
+    if "\\" in img_path:
+        name = img_path.split('\\')[-1]
+    else:
+        name = img_path.split('/')[-1]
+
     name = name.replace('.gif', '')
     name = name.replace('.png', '')
     name = name.replace('.jpg', '')
     return name
 
+def normalize(gray):
+    return np.uint8(255 * (gray - gray.min()) / (gray.max() - gray.min()))
