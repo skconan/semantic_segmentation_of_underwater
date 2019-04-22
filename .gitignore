@@ -25,4 +25,4 @@ images
 # model
 *.index
 *.meta
-ckpt-*
+*ckpt*
