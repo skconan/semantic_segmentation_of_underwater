@@ -16,25 +16,29 @@ from utilities import *
 from layers import *
 from model import *
 
-# img_height = 256
-# img_width = 256
-img_height = 304
-img_width = 484
+img_height = 256
+img_width = 256
+# img_height = 304
+# img_width = 484
 img_layer = 3
 img_size = img_height * img_width
 
 to_train = True
 to_test = False
-to_restore = False
+
+# to_train = False
+# to_test = True
+
+to_restore = True
 output_path = CONST.PATH_OUTPUT
-check_dir = "./checkpoints/"
+check_dir = "./checkpoints_07/"
 
 norm_value = 255.0
 temp_check = 0
 
 
 max_epoch = 1
-max_images = 100
+max_images = 200
 
 h1_size = 150
 h2_size = 300
@@ -56,38 +60,33 @@ class CycleGAN():
         filenames_A/filenames_B -> takes the list of all training images
         self.image_A/self.image_B -> Input image with each values ranging from [-1,1]
         '''
-        path_a = "/home/sk/cycleGANs/dataset/robosub/*.*"
-        path_b = "/home/sk/cycleGANs/dataset/pool_2/*.*"
+        path_a = None
+        if to_train:
+            path_a = "/home/sk/cycleGANs/dataset/robosub_7/*.*"
+            path_b = "/home/sk/cycleGANs/dataset/pool_7/*.*"
+            # path_a = "../dataset/robosub_3_blur/*.*"
+            # path_b = "../dataset/pool_3_blur/*.*"
+        else:
+            path_a = "/home/sk/cycleGANs/dataset/test/*.*"
+
+        image_reader = tf.WholeFileReader()
 
         filenames_A = tf.train.match_filenames_once(path_a)
         self.queue_length_A = tf.size(filenames_A)
-        print("self.queue_length_A", self.queue_length_A)
-        filenames_B = tf.train.match_filenames_once(path_b)
-        self.queue_length_B = tf.size(filenames_B)
-        print("self.queue_length_B", self.queue_length_B)
-
-        # tf.Variable(self.queue_length_A)
-        # tf.Variable(self.queue_length_B)
-
         filename_queue_A = tf.train.string_input_producer(
             filenames_A, shuffle=False)
-        filename_queue_B = tf.train.string_input_producer(
-            filenames_B, shuffle=False)
-
-        image_reader = tf.WholeFileReader()
         _, image_file_A = image_reader.read(filename_queue_A)
-        _, image_file_B = image_reader.read(filename_queue_B)
-
         self.image_A = tf.subtract(tf.div(tf.image.resize_images(
-            # tf.image.decode_jpeg(image_file_A), [256, 256]), norm_value), 1)
-            # tf.image.decode_jpeg(image_file_A), [img_height, img_width]), norm_value), 1)
-            tf.image.decode_jpeg(image_file_A), [img_height, img_width]), norm_value), 1)
-        self.image_B = tf.subtract(tf.div(tf.image.resize_images(
-            # tf.image.decode_jpeg(image_file_B), [256, 256]), norm_value), 1)
-            tf.image.decode_jpeg(image_file_B), [img_height, img_width]), norm_value), 1)
+            tf.image.decode_jpeg(image_file_A), [256, 256]), norm_value), 1)
 
-        # print("input setup")
-        # a = input("enter input to continue")
+        if to_train:
+            filenames_B = tf.train.match_filenames_once(path_b)
+            self.queue_length_B = tf.size(filenames_B)
+            filename_queue_B = tf.train.string_input_producer(
+                filenames_B, shuffle=False)
+            _, image_file_B = image_reader.read(filename_queue_B)
+            self.image_B = tf.subtract(tf.div(tf.image.resize_images(
+                tf.image.decode_jpeg(image_file_B), [256, 256]), norm_value), 1)
 
     def input_read(self, sess):
         '''
@@ -101,31 +100,27 @@ class CycleGAN():
         threads = tf.train.start_queue_runners(coord=coord)
 
         num_files_A = sess.run(self.queue_length_A)
-
-        num_files_B = sess.run(self.queue_length_B)
-
         self.fake_images_A = np.zeros(
             (pool_size, 1, img_height, img_width, img_layer))
-        self.fake_images_B = np.zeros(
-            (pool_size, 1, img_height, img_width, img_layer))
-
         self.A_input = np.zeros(
             (max_images, batch_size, img_height, img_width, img_layer))
-        self.B_input = np.zeros(
-            (max_images, batch_size, img_height, img_width, img_layer))
-
-        # print("max_images", max_images)
-        # a = input()
         for i in range(max_images):
             image_tensor = sess.run(self.image_A)
             if(image_tensor.size == img_size*batch_size*img_layer):
                 self.A_input[i] = image_tensor.reshape(
                     (batch_size, img_height, img_width, img_layer))
-        for i in range(max_images):
-            image_tensor = sess.run(self.image_B)
-            if(image_tensor.size == img_size*batch_size*img_layer):
-                self.B_input[i] = image_tensor.reshape(
-                    (batch_size, img_height, img_width, img_layer))
+
+        if to_train:
+            num_files_B = sess.run(self.queue_length_B)
+            self.fake_images_B = np.zeros(
+                (pool_size, 1, img_height, img_width, img_layer))
+            self.B_input = np.zeros(
+                (max_images, batch_size, img_height, img_width, img_layer))
+            for i in range(max_images):
+                image_tensor = sess.run(self.image_B)
+                if(image_tensor.size == img_size*batch_size*img_layer):
+                    self.B_input[i] = image_tensor.reshape(
+                        (batch_size, img_height, img_width, img_layer))
 
         coord.request_stop()
         coord.join(threads)
@@ -137,7 +132,8 @@ class CycleGAN():
         self.lr -> Learning rate variable
         self.cyc_A/ self.cyc_B -> Images generated after feeding self.fake_A/self.fake_B to corresponding generator. This is use to calcualte cyclic loss
         '''
-
+        img_height = 256
+        img_width = 256
         self.input_A = tf.placeholder(
             tf.float32, [batch_size, img_height, img_width, img_layer], name="input_A")
         self.input_B = tf.placeholder(
@@ -147,6 +143,8 @@ class CycleGAN():
             tf.float32, [None, img_height, img_width, img_layer], name="fake_pool_A")
         self.fake_pool_B = tf.placeholder(
             tf.float32, [None, img_height, img_width, img_layer], name="fake_pool_B")
+
+        # pass-sk
 
         self.global_step = tf.Variable(0, name="global_step", trainable=False)
 
@@ -198,14 +196,12 @@ class CycleGAN():
         disc_loss_A = tf.reduce_mean(tf.squared_difference(self.fake_rec_A, 1))
         disc_loss_B = tf.reduce_mean(tf.squared_difference(self.fake_rec_B, 1))
 
-        g_loss_A = cyc_loss*10 + disc_loss_B
-        g_loss_B = cyc_loss*10 + disc_loss_A
-        # print("generator loss A", g_loss_A)
-        # print("generator loss B", g_loss_B)
-        d_loss_A = (tf.reduce_mean(tf.square(self.fake_pool_rec_A)) +
-                    tf.reduce_mean(tf.squared_difference(self.rec_A, 1)))/2.0
-        d_loss_B = (tf.reduce_mean(tf.square(self.fake_pool_rec_B)) +
-                    tf.reduce_mean(tf.squared_difference(self.rec_B, 1)))/2.0
+        self.g_loss_A = cyc_loss*10 + disc_loss_B
+        self.g_loss_B = cyc_loss*10 + disc_loss_A
+        self.d_loss_A = (tf.reduce_mean(tf.square(self.fake_pool_rec_A)) +
+                         tf.reduce_mean(tf.squared_difference(self.rec_A, 1)))/2.0
+        self.d_loss_B = (tf.reduce_mean(tf.square(self.fake_pool_rec_B)) +
+                         tf.reduce_mean(tf.squared_difference(self.rec_B, 1)))/2.0
 
         optimizer = tf.train.AdamOptimizer(self.lr, beta1=0.5)
 
@@ -216,47 +212,66 @@ class CycleGAN():
         d_B_vars = [var for var in self.model_vars if 'd_B' in var.name]
         g_B_vars = [var for var in self.model_vars if 'g_B' in var.name]
 
-        self.d_A_trainer = optimizer.minimize(d_loss_A, var_list=d_A_vars)
-        self.d_B_trainer = optimizer.minimize(d_loss_B, var_list=d_B_vars)
-        self.g_A_trainer = optimizer.minimize(g_loss_A, var_list=g_A_vars)
-        self.g_B_trainer = optimizer.minimize(g_loss_B, var_list=g_B_vars)
+        self.d_A_trainer = optimizer.minimize(self.d_loss_A, var_list=d_A_vars)
+        self.d_B_trainer = optimizer.minimize(self.d_loss_B, var_list=d_B_vars)
+        self.g_A_trainer = optimizer.minimize(self.g_loss_A, var_list=g_A_vars)
+        self.g_B_trainer = optimizer.minimize(self.g_loss_B, var_list=g_B_vars)
 
-        for var in self.model_vars:
-            print(var.name)
+        # for var in self.model_vars:
+        #     print(var.name)
 
         # Summary variables for tensorboard
 
-        self.g_A_loss_summ = tf.summary.scalar("g_A_loss", g_loss_A)
-        self.g_B_loss_summ = tf.summary.scalar("g_B_loss", g_loss_B)
-        self.d_A_loss_summ = tf.summary.scalar("d_A_loss", d_loss_A)
-        self.d_B_loss_summ = tf.summary.scalar("d_B_loss", d_loss_B)
+        self.g_A_loss_summ = tf.summary.scalar("g_A_loss", self.g_loss_A)
+        self.g_B_loss_summ = tf.summary.scalar("g_B_loss", self.g_loss_B)
+        self.d_A_loss_summ = tf.summary.scalar("d_A_loss", self.d_loss_A)
+        self.d_B_loss_summ = tf.summary.scalar("d_B_loss", self.d_loss_B)
 
-        # print("loss calculation")
+        # print("loss calculation", self.g_A_loss_summ)
         # a = input("enter input to continue")
 
     def save_training_images(self, sess, epoch):
-
-        if not os.path.exists("./output/imgs"):
-            os.makedirs("./output/imgs")
+        output_path = "./output_7/imgs"
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
         # save_training_images_input = True
-        for i in range(0, 10):
-            print(self.fake_A.shape)
+        for i in range(0, 5):
+            # print(self.fake_A.shape)
             fake_A_temp, fake_B_temp, cyc_A_temp, cyc_B_temp = sess.run([self.fake_A, self.fake_B, self.cyc_A, self.cyc_B], feed_dict={
                                                                         self.input_A: self.A_input[i], self.input_B: self.B_input[i]})
-            imsave("./output/imgs/fakeB_" + str(epoch) + "_" + str(i) +
+            imsave(output_path+"/fakeB_" + str(epoch) + "_" + str(i) +
                    ".jpg", ((fake_A_temp[0]+1)*norm_value).astype(np.uint8))
-            imsave("./output/imgs/fakeA_" + str(epoch) + "_" + str(i) +
+            imsave(output_path+"/fakeA_" + str(epoch) + "_" + str(i) +
                    ".jpg", ((fake_B_temp[0]+1)*norm_value).astype(np.uint8))
-            imsave("./output/imgs/cycA_" + str(epoch) + "_" + str(i) +
+            imsave(output_path+"/cycA_" + str(epoch) + "_" + str(i) +
                    ".jpg", ((cyc_A_temp[0]+1)*norm_value).astype(np.uint8))
-            imsave("./output/imgs/cycB_" + str(epoch) + "_" + str(i) +
+            imsave(output_path+"/cycB_" + str(epoch) + "_" + str(i) +
                    ".jpg", ((cyc_B_temp[0]+1)*norm_value).astype(np.uint8))
 
             if (self.save_training_images_input):
-                imsave("./output/imgs/inputA_" + str(epoch) + "_" + str(i) +
+                imsave(output_path+"/inputA_" + str(epoch) + "_" + str(i) +
                        ".jpg", ((self.A_input[i][0]+1)*norm_value).astype(np.uint8))
-                imsave("./output/imgs/inputB_" + str(epoch) + "_" + str(i) +
+                imsave(output_path+"/inputB_" + str(epoch) + "_" + str(i) +
                        ".jpg", ((self.B_input[i][0]+1)*norm_value).astype(np.uint8))
+
+        # for i in range(90, 95):
+        #     # print(self.fake_A.shape)
+        #     fake_A_temp, fake_B_temp, cyc_A_temp, cyc_B_temp = sess.run([self.fake_A, self.fake_B, self.cyc_A, self.cyc_B], feed_dict={
+        #                                                                 self.input_A: self.A_input[i], self.input_B: self.B_input[i]})
+        #     imsave(output_path+"/fakeB_" + str(epoch) + "_" + str(i) +
+        #            ".jpg", ((fake_A_temp[0]+1)*norm_value).astype(np.uint8))
+        #     imsave(output_path+"/fakeA_" + str(epoch) + "_" + str(i) +
+        #            ".jpg", ((fake_B_temp[0]+1)*norm_value).astype(np.uint8))
+        #     imsave(output_path+"/cycA_" + str(epoch) + "_" + str(i) +
+        #            ".jpg", ((cyc_A_temp[0]+1)*norm_value).astype(np.uint8))
+        #     imsave(output_path+"/cycB_" + str(epoch) + "_" + str(i) +
+        #            ".jpg", ((cyc_B_temp[0]+1)*norm_value).astype(np.uint8))
+
+        #     if (self.save_training_images_input):
+        #         imsave(output_path+"/inputA_" + str(epoch) + "_" + str(i) +
+        #                ".jpg", ((self.A_input[i][0]+1)*norm_value).astype(np.uint8))
+        #         imsave(output_path+"/inputB_" + str(epoch) + "_" + str(i) +
+        #                ".jpg", ((self.B_input[i][0]+1)*norm_value).astype(np.uint8))
 
         self.save_training_images_input = False
 
@@ -284,6 +299,8 @@ class CycleGAN():
         # Load Dataset from the dataset folder
         self.input_setup()
 
+        # pass-sk
+
         # Build the network
         self.model_setup()
         # Loss function calculations
@@ -296,6 +313,8 @@ class CycleGAN():
         saver = tf.train.Saver(max_to_keep=6)
         # print("global_variables_initializer")
         # a = input("enter input to continue")
+
+        start_time = time.time()
 
         with tf.device('/GPU:1'):
             with tf.Session() as sess:
@@ -314,34 +333,37 @@ class CycleGAN():
                 if not os.path.exists(check_dir):
                     os.makedirs(check_dir)
 
-                # Training Loop
-                for epoch in range(sess.run(self.global_step), 250):
-                    print("In the epoch ", epoch)
+                number_of_epoch = 500
 
+                # Training Loop
+                for epoch in range(sess.run(self.global_step), number_of_epoch):
+                    # print("In the epoch ", epoch)
+                    # print("Loss of Genarator A", self.g_A_loss_summ)
+                    # print("Loss of Genarator B", self.g_B_loss_summ)
                     if epoch % 20 == 0:
                         saver.save(sess, os.path.join(
                             check_dir, "cyclegan"), global_step=epoch)
 
                     # Dealing with the learning rate as per the epoch number
-                    curr_lr = 0.0001
+                    curr_lr = 0.0002
+                    # curr_lr = 0.0005
 
-                    if(epoch < 100):
+                    # if(epoch < number_of_epoch):
+                    if(epoch < number_of_epoch//2):
                         curr_lr = curr_lr
                     else:
-                        curr_lr = curr_lr - curr_lr*(epoch-100)/100
+                        curr_lr = curr_lr - curr_lr*(epoch-number_of_epoch)/number_of_epoch
 
                     if(save_training_images):
                         self.save_training_images(sess, epoch)
 
                     # sys.exit()
 
-                    for ptr in range(0, max_images):
-                        print("In the iteration ", ptr)
-                        print("Starting", time.time()*1000.0)
+                    for ptr in range(0, 100):
 
                         # Optimizing the G_A network
 
-                        _, fake_B_temp, summary_str = sess.run([self.g_A_trainer, self.fake_B, self.g_A_loss_summ], feed_dict={
+                        _, fake_B_temp, summary_str, g_loss_A = sess.run([self.g_A_trainer, self.fake_B, self.g_A_loss_summ, self.g_loss_A], feed_dict={
                             self.input_A: self.A_input[ptr], self.input_B: self.B_input[ptr], self.lr: curr_lr})
 
                         writer.add_summary(summary_str, epoch*max_images + ptr)
@@ -349,12 +371,12 @@ class CycleGAN():
                             self.num_fake_inputs, fake_B_temp, self.fake_images_B)
 
                         # Optimizing the D_B network
-                        _, summary_str = sess.run([self.d_B_trainer, self.d_B_loss_summ], feed_dict={
+                        _, summary_str, d_loss_B = sess.run([self.d_B_trainer, self.d_B_loss_summ, self.d_loss_B], feed_dict={
                             self.input_A: self.A_input[ptr], self.input_B: self.B_input[ptr], self.lr: curr_lr, self.fake_pool_B: fake_B_temp1})
                         writer.add_summary(summary_str, epoch*max_images + ptr)
 
                         # Optimizing the G_B network
-                        _, fake_A_temp, summary_str = sess.run([self.g_B_trainer, self.fake_A, self.g_B_loss_summ], feed_dict={
+                        _, fake_A_temp, summary_str, g_loss_B = sess.run([self.g_B_trainer, self.fake_A, self.g_B_loss_summ, self.g_loss_B], feed_dict={
                             self.input_A: self.A_input[ptr], self.input_B: self.B_input[ptr], self.lr: curr_lr})
 
                         writer.add_summary(summary_str, epoch*max_images + ptr)
@@ -363,8 +385,19 @@ class CycleGAN():
                             self.num_fake_inputs, fake_A_temp, self.fake_images_A)
 
                         # Optimizing the D_A network
-                        _, summary_str = sess.run([self.d_A_trainer, self.d_A_loss_summ], feed_dict={
+                        _, summary_str, d_loss_A = sess.run([self.d_A_trainer, self.d_A_loss_summ, self.d_loss_A], feed_dict={
                             self.input_A: self.A_input[ptr], self.input_B: self.B_input[ptr], self.lr: curr_lr, self.fake_pool_A: fake_A_temp1})
+
+                        if ptr == 99:
+                            print("Loss of generator A:", g_loss_A)
+                            print("Loss of discriminator A:", d_loss_A)
+                            print("Loss of generator B:", g_loss_B)
+                            print("Loss of discriminator B:", d_loss_B)
+
+                        if ptr % 20 == 0:
+                            print("In epoch:", epoch, "In the iteration ", ptr)
+                            print("Time spent:", (time.time() -
+                                                  start_time)/60.0, "minute")
 
                         writer.add_summary(summary_str, epoch*max_images + ptr)
 
@@ -382,32 +415,44 @@ class CycleGAN():
         self.input_setup()
 
         self.model_setup()
-        saver = tf.train.Saver()
-        init = tf.global_variables_initializer()
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
 
-        with tf.Session() as sess:
+        init = (tf.global_variables_initializer(),
+                tf.local_variables_initializer())
+        saver = tf.train.Saver(max_to_keep=6)
+        # print("global_variables_initializer")
+        # a = input("enter input to continue")
 
-            sess.run(init)
+        start_time = time.time()
 
-            self.input_read(sess)
+        with tf.device('/GPU:1'):
 
-            chkpt_fname = tf.train.latest_checkpoint(check_dir)
-            saver.restore(sess, chkpt_fname)
+            with tf.Session(config=config) as sess:
 
-            if not os.path.exists("./output/imgs/test/"):
-                os.makedirs("./output/imgs/test/")
+                sess.run(init)
 
-            for i in range(0, 100):
-                fake_A_temp, fake_B_temp = sess.run([self.fake_A, self.fake_B], feed_dict={
-                                                    self.input_A: self.A_input[i], self.input_B: self.B_input[i]})
-                imsave("./output/imgs/test/fakeB_"+str(i)+".jpg",
-                       ((fake_A_temp[0]+1)*norm_value).astype(np.uint8))
-                imsave("./output/imgs/test/fakeA_"+str(i)+".jpg",
-                       ((fake_B_temp[0]+1)*norm_value).astype(np.uint8))
-                imsave("./output/imgs/test/inputA_"+str(i)+".jpg",
-                       ((self.A_input[i][0]+1)*norm_value).astype(np.uint8))
-                imsave("./output/imgs/test/inputB_"+str(i)+".jpg",
-                       ((self.B_input[i][0]+1)*norm_value).astype(np.uint8))
+                self.input_read(sess)
+
+                chkpt_fname = tf.train.latest_checkpoint(check_dir)
+                chkpt_fname = "./checkpoints_04/cyclegan-200"                
+                saver.restore(sess, chkpt_fname)
+
+                if not os.path.exists("./output/imgs/test/"):
+                    os.makedirs("./output/imgs/test/")
+
+                for i in range(0, 200):
+                    # print(i)
+                    fake_B_temp = sess.run([self.fake_B], feed_dict={
+                                                        self.input_A: self.A_input[i]})
+                    # imsave("./output/imgs/test/fakeB_"+str(i)+".jpg",
+                    #     ((fake_A_temp[0]+1)*norm_value).astype(np.uint8))
+                    print(i,len(fake_B_temp),fake_B_temp[0].shape,fake_B_temp[0][0].shape)
+                    imsave("./output/imgs/test/fakeA_"+str(i)+".jpg",((fake_B_temp[0][0]+1)*norm_value).astype(np.uint8))
+                    # imsave("./output/imgs/test/inputA_"+str(i)+".jpg",
+                    #     ((self.A_input[i][0]+1)*norm_value).astype(np.uint8))
+                    # imsave("./output/imgs/test/inputB_"+str(i)+".jpg",
+                    #        ((self.B_input[i][0]+1)*norm_value).astype(np.uint8))
 
 
 def main():
