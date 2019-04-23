@@ -1,13 +1,21 @@
+#!/usr/bin/env python
+"""
+    File name: pix2pix.py
+    Author: skconan
+    Date created: 2019/04/13
+    Python Version: 3.6
+    Source: https://www.tensorflow.org/alpha/tutorials/generative/pix2pix
+"""
+
 from __future__ import absolute_import, division, print_function, unicode_literals
 import os
 import time
-import matplotlib.pyplot as plt
-from IPython.display import clear_output
-import tensorflow as tf
-from utilities import *
 import cv2 as cv
 import numpy as np
-from tensorflow.python.client import device_lib
+import tensorflow as tf
+from utilities import *
+import matplotlib.pyplot as plt
+from IPython.display import clear_output
 
 class Pix2Pix():
     def __init__(self, postfix):
