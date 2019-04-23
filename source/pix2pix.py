@@ -17,6 +17,7 @@ from utilities import *
 import matplotlib.pyplot as plt
 from IPython.display import clear_output
 
+
 class Pix2Pix():
     def __init__(self, postfix):
         self.BUFFER_SIZE = 400
@@ -231,26 +232,21 @@ class Pix2Pix():
             plt.savefig(self.train_result + "/" + str(epoch) + "_" +
                         str(j) + "_" + title[i] + ".jpg")
 
-    def predict_images(self, model, test_input):
+    def predict_images(self, img):
         print("Predict Image")
-        count = 0
-        for img in test_input:
-            prediction = model(tf.expand_dims(img, 0), training=True)
-            result = (prediction[0] * 0.5 + 0.5)*255
-            result = np.uint8(result)
-            result = cv.resize(result, (484, 304))
-            result = cv.cvtColor(result, cv.COLOR_RGB2BGR)
+    
+        prediction = self.generator(tf.expand_dims(img, 0), training=True)
+        result = (prediction[0] * 0.5 + 0.5)*255
+        result = np.uint8(result)
+        result = cv.resize(result, (484, 304))
+        result = cv.cvtColor(result, cv.COLOR_RGB2BGR)
 
-            img = (img * 0.5 + 0.5)*255
-            img = np.uint8(img)
-            img = cv.resize(img, (484, 304))
-            img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+        img = (img * 0.5 + 0.5)*255
+        img = np.uint8(img)
+        img = cv.resize(img, (484, 304))
+        img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
 
-            cv.imwrite(self.predict_result + "/" + "%03d" %
-                       (count) + "_segmentation.jpg", result)
-            cv.imwrite(self.predict_result + "/" + "%03d" %
-                       (count) + "_original.jpg", img)
-            count += 1
+        return img, result    
 
     def train_step(self, input_image, target):
         with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
@@ -274,9 +270,9 @@ class Pix2Pix():
                                                      self.discriminator.trainable_variables)
 
         self.generator_optimizer.apply_gradients(zip(generator_gradients,
-                                                self.generator.trainable_variables))
+                                                     self.generator.trainable_variables))
         self.discriminator_optimizer.apply_gradients(zip(discriminator_gradients,
-                                                    self.discriminator.trainable_variables))
+                                                         self.discriminator.trainable_variables))
 
     def train(self, dataset, test_dataset, epochs, restore=False):
         with tf.device('/device:GPU:0'):
@@ -307,15 +303,18 @@ class Pix2Pix():
                 if int(self.checkpoint.step) % 10 == 0:
                     self.checkpoint.save(file_prefix=checkpoint_prefix)
                 print('Time taken for epoch {} is {} sec\n'.format(int(self.checkpoint.step),
-                                                                time.time()-start))
+                                                                   time.time()-start))
 
-    def predict(self, predict_dataset):
-        # model_file = tf.train.latest_checkpoint(self.checkpoint_dir)
-        # print(self.checkpoint_dir)
-        model_file = "./training_checkpoints_2/200-ckpt-20"
-        print(model_file)
+    def predict(self, predict_dataset, model_file):
         self.checkpoint.restore(model_file)
-        self.predict_images(self.generator, predict_dataset)
+        count = 0
+        for img in predict_dataset:
+            img, result = self.predict_images(img)
+            cv.imwrite(self.predict_result + "/" + "%03d" %
+                       (count) + "_segmentation.jpg", result)
+            cv.imwrite(self.predict_result + "/" + "%03d" %
+                       (count) + "_original.jpg", img)
+            count += 1
 
 
 def load_training_dataset():
@@ -356,10 +355,8 @@ def load_testing_dataset():
     return test_dataset
 
 
-def load_predict_dataset():
+def load_predict_dataset(img_predict_dir):
     predict_dataset = []
-
-    img_predict_dir = "./dataset/test"
 
     img_path_list = get_file_path(img_predict_dir)
     for img_path in img_path_list[:10]:
@@ -371,7 +368,7 @@ def load_predict_dataset():
 
 
 def main():
-    is_train = True
+    is_train = False
     pix2pix = Pix2Pix(postfix='_pool_robosub')
 
     if is_train:
@@ -379,8 +376,9 @@ def main():
         test_dataset = load_testing_dataset()
         pix2pix.train(train_dataset, test_dataset, 200, True)
     else:
-        predict_dataset = load_predict_dataset()
-        pix2pix.predict(predict_dataset)
+        model_file = "./training_checkpoints_2/200-ckpt-20"
+        predict_dataset = load_predict_dataset(img_predict_dir = "./dataset/images_test")
+        pix2pix.predict(predict_dataset, model_file)
 
 
 if __name__ == "__main__":
