@@ -16,10 +16,11 @@ import tensorflow as tf
 from utilities import *
 import matplotlib.pyplot as plt
 from IPython.display import clear_output
+from PIL import Image
 
 
 class Pix2Pix():
-    def __init__(self, postfix):
+    def __init__(self, postfix, train=True):
         self.BUFFER_SIZE = 400
         self.BATCH_SIZE = 1
         self.IMG_WIDTH = 256
@@ -28,28 +29,29 @@ class Pix2Pix():
         self.LAMBDA = 100
         self.OUTPUT_CHANNELS = 3
 
-        # postfix = '_pool_robosub'
-        self.checkpoint_dir = './pix2pix_checkpoints' + postfix
-        # self.checkpoint_dir = './training_checkpoints' + postfix
-        self.train_result = "./pix2pix_train_result" + postfix
-        self.predict_result = "./pix2pix_predict_result" + postfix
+        if train:
+            # postfix = '_pool_robosub'
+            self.checkpoint_dir = './pix2pix_checkpoints' + postfix
+            # self.checkpoint_dir = './training_checkpoints' + postfix
+            self.train_result = "./pix2pix_train_result" + postfix
+            self.predict_result = "./pix2pix_predict_result" + postfix
 
-        if not os.path.exists(self.checkpoint_dir):
-            os.makedirs(self.checkpoint_dir)
+            if not os.path.exists(self.checkpoint_dir):
+                os.makedirs(self.checkpoint_dir)
 
-        if not os.path.exists(self.train_result):
-            os.makedirs(self.train_result)
+            if not os.path.exists(self.train_result):
+                os.makedirs(self.train_result)
 
-        if not os.path.exists(self.predict_result):
-            os.makedirs(self.predict_result)
+            if not os.path.exists(self.predict_result):
+                os.makedirs(self.predict_result)
 
         # self.restore = False
         # self.restore = True
 
         self.generator = self.Generator()
-        self.generator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+        self.generator_optimizer = tf.keras.optimizers.Adam(5e-4, beta_1=0.5)
         self.discriminator_optimizer = tf.keras.optimizers.Adam(
-            2e-4, beta_1=0.5)
+            5e-4, beta_1=0.5)
         self.discriminator = self.Discriminator()
 
         self.checkpoint = tf.train.Checkpoint(step=tf.Variable(0),
@@ -58,6 +60,7 @@ class Pix2Pix():
                                               generator=self.generator, discriminator=self.discriminator)
 
     def downsample(self, filters, size, apply_batchnorm=True):
+        # 64 4
         # sequential convolution neural network
         initializer = tf.random_normal_initializer(0., 0.02)
         # he term kernel_initializer is a fancy term for which statistical distribution
@@ -66,9 +69,9 @@ class Pix2Pix():
 
         layer = tf.keras.Sequential()
 
-        #  filters: Integer, the dimensionality of the output space
+        # filters: Integer, the dimensionality of the output space
         #           (i.e. the number of output filters in the convolution).
-        # kernel_size: An integer or tuple/list of 2 integers,
+        # kernel_(size): An integer or tuple/list of 2 integers,
         #              specifying the height and width of the 2D convolution window.
         #              Can be a single integer to specify the same value for all spatial dimensions.
         layer.add(
@@ -234,7 +237,7 @@ class Pix2Pix():
 
     def predict_images(self, img):
         print("Predict Image")
-    
+
         prediction = self.generator(tf.expand_dims(img, 0), training=True)
         result = (prediction[0] * 0.5 + 0.5)*255
         result = np.uint8(result)
@@ -246,13 +249,13 @@ class Pix2Pix():
         img = cv.resize(img, (484, 304))
         img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
 
-        return img, result    
+        return img, result
 
     def train_step(self, input_image, target):
         with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
             # gen_output = generator(input_image, training=True)
-            gen_output = self.generator(tf.expand_dims(
-                input_image, 0), training=True)
+            gen_output = self.generator(
+                tf.expand_dims(input_image, 0), training=True)
             # tf.expand_dims(input_image,0) Inserts a dimension of 1 into a tensor's shape.
             disc_real_output = self.discriminator(
                 [tf.expand_dims(input_image, 0), tf.expand_dims(target, 0)], training=True)
@@ -264,6 +267,7 @@ class Pix2Pix():
             disc_loss = self.discriminator_loss(
                 disc_real_output, disc_generated_output)
 
+        # print("Generator Loss:", gen_loss[0][0][0])
         generator_gradients = gen_tape.gradient(gen_loss,
                                                 self.generator.trainable_variables)
         discriminator_gradients = disc_tape.gradient(disc_loss,
@@ -275,35 +279,36 @@ class Pix2Pix():
                                                          self.discriminator.trainable_variables))
 
     def train(self, dataset, test_dataset, epochs, restore=False):
-        with tf.device('/device:GPU:0'):
-            step = 0
-            if restore:
-                m = tf.train.latest_checkpoint(self.checkpoint_dir)
-                print(m)
-                self.checkpoint.restore(m)
-                if int(self.checkpoint.step) < 10:
-                    print("added")
-                    step = int(self.checkpoint.step)*10
 
-            for epoch in range(step, epochs):
-                start = time.time()
-                for input_image, target in dataset:
-                    self.train_step(input_image, target)
+        step = 0
+        if restore:
+            m = tf.train.latest_checkpoint(self.checkpoint_dir)
+            print("Restore from:", m)
+            self.checkpoint.restore(m)
+            step = int(self.checkpoint.step)
+            print("Last step:", step)
+        for epoch in range(step, epochs):
+            start = time.time()
+            self.checkpoint.step.assign_add(1)
+            print("step:", int(self.checkpoint.step))
+            for input_image, target in dataset:
+                self.train_step(input_image, target)
+            clear_output(wait=True)
+            
+            # saving (checkpoint) the model every 20 epochs
 
-                clear_output(wait=True)
-                i = 0
-                for inp, tar in test_dataset[:10]:
-                    self.generate_images(self.generator, inp, tar, epoch, i)
-                    i += 1
-                # saving (checkpoint) the model every 20 epochs
-                self.checkpoint.step.assign_add(1)
-                checkpoint_prefix = os.path.join(
-                    self.checkpoint_dir, str(int(self.checkpoint.step)) + "-ckpt")
+            checkpoint_prefix = os.path.join(
+                self.checkpoint_dir, str(int(self.checkpoint.step)) + "-ckpt")
+            if int(self.checkpoint.step) % 10 == 0:
+                self.checkpoint.save(file_prefix=checkpoint_prefix)
+            print('Model saved')
+            i = 0
+            for inp, tar in test_dataset[:10]:
+                self.generate_images(self.generator, inp, tar, epoch, i)
+                i += 1
 
-                if int(self.checkpoint.step) % 10 == 0:
-                    self.checkpoint.save(file_prefix=checkpoint_prefix)
-                print('Time taken for epoch {} is {} sec\n'.format(int(self.checkpoint.step),
-                                                                   time.time()-start))
+            print('Time taken for epoch {} is {} sec\n'.format(int(self.checkpoint.step),
+                                                               time.time()-start))
 
     def predict(self, predict_dataset, model_file):
         self.checkpoint.restore(model_file)
@@ -320,16 +325,35 @@ class Pix2Pix():
 def load_training_dataset():
     train_dataset = []
 
-    img_dir = "./dataset/from_web/images"
-    label_dir = "./dataset/from_web/groundTruth_train"
+    img_dir = "./dataset/images"
+    label_dir = "./dataset/groundTruth_color_train"
 
     label_path_list = get_file_path(label_dir)
     for label_path in label_path_list:
         name = get_file_name(label_path)
         img_path = img_dir + "/" + name + ".jpg"
+        # if os.path.exists(img_dir + "/" + name + ".jpg"):
+        # else:
+        #     img_path = img_dir + "/" + name + ".png"
+
         if not os.path.exists(img_path):
             continue
-        dataset = load_image_train(img_path, label_path)
+        try:
+            dataset = load_image_train(img_path, label_path)
+        except:
+            print("error load image")
+        degrees = int(tf.random.uniform((), maxval=0.7)*10)
+
+        val = tf.random.uniform(())
+        if val > 0.5:
+            rotated_img = rotation(dataset[0], degrees)
+            rotated_label = rotation(dataset[1], degrees)
+        else:
+            rotated_img = rotation(dataset[0], -degrees)
+            rotated_label = rotation(dataset[1], -degrees)
+        rotated = [rotated_img, rotated_label]
+
+        train_dataset.append(rotated)
         train_dataset.append(dataset)
 
     print("Number of training set:", len(train_dataset))
@@ -339,8 +363,8 @@ def load_training_dataset():
 def load_testing_dataset():
     test_dataset = []
 
-    img_dir = "./dataset/from_web/images"
-    label_dir = "./dataset/from_web/groundTruth_test"
+    img_dir = "./dataset/images"
+    label_dir = "./dataset/groundTruth_color_test"
 
     label_path_list = get_file_path(label_dir)
     for label_path in label_path_list:
@@ -359,7 +383,7 @@ def load_predict_dataset(img_predict_dir):
     predict_dataset = []
 
     img_path_list = get_file_path(img_predict_dir)
-    for img_path in img_path_list[:10]:
+    for img_path in img_path_list:
         dataset = load_image_predict(img_path)
         predict_dataset.append(dataset)
 
@@ -368,16 +392,21 @@ def load_predict_dataset(img_predict_dir):
 
 
 def main():
-    is_train = False
-    pix2pix = Pix2Pix(postfix='_pool_robosub')
+    tf.config.set_soft_device_placement(True)
+    # tf.debugging.set_log_device_placement(True)
+    # is_train = False
+    is_train = True
+    pix2pix = Pix2Pix(postfix='_addbg_ver2')
 
     if is_train:
         train_dataset = load_training_dataset()
         test_dataset = load_testing_dataset()
-        pix2pix.train(train_dataset, test_dataset, 200, True)
+        with tf.device('/device:GPU:0'):
+            pix2pix.train(train_dataset, test_dataset, 200, False)
     else:
-        model_file = "./training_checkpoints_2/200-ckpt-20"
-        predict_dataset = load_predict_dataset(img_predict_dir = "./dataset/images_test")
+        model_file = "./pix2pix_checkpoints_color/50-ckpt-5"
+        predict_dataset = load_predict_dataset(
+            img_predict_dir="./dataset/from_web/images")
         pix2pix.predict(predict_dataset, model_file)
 
 
