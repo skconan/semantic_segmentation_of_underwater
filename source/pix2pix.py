@@ -49,9 +49,9 @@ class Pix2Pix():
         # self.restore = True
 
         self.generator = self.Generator()
-        self.generator_optimizer = tf.keras.optimizers.Adam(5e-4, beta_1=0.5)
+        self.generator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
         self.discriminator_optimizer = tf.keras.optimizers.Adam(
-            5e-4, beta_1=0.5)
+            2e-4, beta_1=0.5)
         self.discriminator = self.Discriminator()
 
         self.checkpoint = tf.train.Checkpoint(step=tf.Variable(0),
@@ -344,16 +344,16 @@ def load_training_dataset():
             print("error load image")
         degrees = int(tf.random.uniform((), maxval=0.7)*10)
 
-        val = tf.random.uniform(())
-        if val > 0.5:
-            rotated_img = rotation(dataset[0], degrees)
-            rotated_label = rotation(dataset[1], degrees)
-        else:
-            rotated_img = rotation(dataset[0], -degrees)
-            rotated_label = rotation(dataset[1], -degrees)
-        rotated = [rotated_img, rotated_label]
+        # val = tf.random.uniform(())
+        # if val > 0.5:
+        #     rotated_img = rotation(dataset[0], degrees)
+        #     rotated_label = rotation(dataset[1], degrees)
+        # else:
+        #     rotated_img = rotation(dataset[0], -degrees)
+        #     rotated_label = rotation(dataset[1], -degrees)
+        # rotated = [rotated_img, rotated_label]
 
-        train_dataset.append(rotated)
+        # train_dataset.append(rotated)
         train_dataset.append(dataset)
 
     print("Number of training set:", len(train_dataset))
@@ -402,7 +402,7 @@ def main():
         train_dataset = load_training_dataset()
         test_dataset = load_testing_dataset()
         with tf.device('/device:GPU:0'):
-            pix2pix.train(train_dataset, test_dataset, 200, False)
+            pix2pix.train(train_dataset, test_dataset, 200, True)
     else:
         model_file = "./pix2pix_checkpoints_color/50-ckpt-5"
         predict_dataset = load_predict_dataset(
