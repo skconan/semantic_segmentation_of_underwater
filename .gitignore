@@ -26,3 +26,5 @@ images
 *.index
 *.meta
 *ckpt*
+
+*.avi
