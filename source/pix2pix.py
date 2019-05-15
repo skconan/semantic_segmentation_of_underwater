@@ -63,7 +63,7 @@ class Pix2Pix():
         # 64 4
         # sequential convolution neural network
         initializer = tf.random_normal_initializer(0., 0.02)
-        # he term kernel_initializer is a fancy term for which statistical distribution
+        # The term kernel_initializer is a fancy term for which statistical distribution
         # or function to use for initialising the weights. In case of statistical distribution,
         # the library will generate numbers from that statistical distribution and use as starting weights.
 
@@ -344,14 +344,14 @@ def load_training_dataset():
             print("error load image")
         degrees = int(tf.random.uniform((), maxval=0.7)*10)
 
-        # val = tf.random.uniform(())
-        # if val > 0.5:
-        #     rotated_img = rotation(dataset[0], degrees)
-        #     rotated_label = rotation(dataset[1], degrees)
-        # else:
-        #     rotated_img = rotation(dataset[0], -degrees)
-        #     rotated_label = rotation(dataset[1], -degrees)
-        # rotated = [rotated_img, rotated_label]
+        val = tf.random.uniform(())
+        if val > 0.5:
+            dataset[0] = rotation(dataset[0], degrees)
+            dataset[1] = rotation(dataset[1], degrees)
+        else:
+            dataset[0] = rotation(dataset[0], -degrees)
+            dataset[1] = rotation(dataset[1], -degrees)
+    
 
         # train_dataset.append(rotated)
         train_dataset.append(dataset)
@@ -396,13 +396,13 @@ def main():
     # tf.debugging.set_log_device_placement(True)
     # is_train = False
     is_train = True
-    pix2pix = Pix2Pix(postfix='_addbg_ver2')
+    pix2pix = Pix2Pix(postfix='_obj')
 
     if is_train:
         train_dataset = load_training_dataset()
         test_dataset = load_testing_dataset()
         with tf.device('/device:GPU:0'):
-            pix2pix.train(train_dataset, test_dataset, 200, True)
+            pix2pix.train(train_dataset, test_dataset, 200, False)
     else:
         model_file = "./pix2pix_checkpoints_color/50-ckpt-5"
         predict_dataset = load_predict_dataset(
