@@ -10,6 +10,7 @@ import os
 import numpy as np
 import tensorflow as tf
 import colorama
+from PIL import Image
 
 colorama.init()
 DEBUG = True
@@ -59,17 +60,26 @@ def get_file_name(img_path):
     return name
 
 
-def normalize(gray):
-    return np.uint8(255 * (gray - gray.min()) / (gray.max() - gray.min()))
+# def normalize(gray):
+#     return np.uint8(255 * (gray - gray.min()) / (gray.max() - gray.min()))
 
 
 def load(img_file, label_file):
-    img = tf.io.read_file(img_file)
-    img = tf.image.decode_jpeg(img)
+    img_in = tf.io.read_file(img_file)
+    # print(img_file,label_file)
+    try:
+        img = tf.image.decode_jpeg(img_in)
+    except:
+        img = tf.image.decode_png(img_in, channels=3)
+
     in_img = img
 
-    img = tf.io.read_file(label_file)
-    img = tf.image.decode_png(img, channels=3)
+    img_in = tf.io.read_file(label_file)
+    try:
+        img = tf.image.decode_png(img_in, channels=3)
+    except:
+        img = tf.image.decode_jpeg(img_in)
+
     out_img = img
 
     in_img = tf.cast(in_img, tf.float32)
@@ -148,3 +158,14 @@ def load_image_predict(img_file):
     in_img = normalize(in_img)
 
     return in_img
+
+def rotation(img_tensor, degrees):
+    img = np.uint8((img_tensor*0.5+0.5)*255)
+    img = Image.fromarray(img)
+    rotated = Image.Image.rotate(img, degrees)
+    rotated = rotated.resize((280,280))
+    rotated = rotated.crop((12,12,268,268))
+    
+    tensor = tf.convert_to_tensor(np.float32(rotated))
+    tensor = normalize(tensor)
+    return tensor
