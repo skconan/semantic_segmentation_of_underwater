@@ -25,14 +25,11 @@ class Pix2Pix():
         self.BATCH_SIZE = 1
         self.IMG_WIDTH = 256
         self.IMG_HEIGHT = 256
-        # self.EPOCHS = 200
         self.LAMBDA = 100
         self.OUTPUT_CHANNELS = 3
 
         if train:
-            # postfix = '_pool_robosub'
             self.checkpoint_dir = './pix2pix_checkpoints' + postfix
-            # self.checkpoint_dir = './training_checkpoints' + postfix
             self.train_result = "./pix2pix_train_result" + postfix
             self.predict_result = "./pix2pix_predict_result" + postfix
 
@@ -44,9 +41,6 @@ class Pix2Pix():
 
             if not os.path.exists(self.predict_result):
                 os.makedirs(self.predict_result)
-
-        # self.restore = False
-        # self.restore = True
 
         self.generator = self.Generator()
         self.generator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
@@ -60,26 +54,13 @@ class Pix2Pix():
                                               generator=self.generator, discriminator=self.discriminator)
 
     def downsample(self, filters, size, apply_batchnorm=True):
-        # 64 4
-        # sequential convolution neural network
         initializer = tf.random_normal_initializer(0., 0.02)
-        # The term kernel_initializer is a fancy term for which statistical distribution
-        # or function to use for initialising the weights. In case of statistical distribution,
-        # the library will generate numbers from that statistical distribution and use as starting weights.
-
         layer = tf.keras.Sequential()
-
-        # filters: Integer, the dimensionality of the output space
-        #           (i.e. the number of output filters in the convolution).
-        # kernel_(size): An integer or tuple/list of 2 integers,
-        #              specifying the height and width of the 2D convolution window.
-        #              Can be a single integer to specify the same value for all spatial dimensions.
         layer.add(
             tf.keras.layers.Conv2D(filters, size, strides=2, padding='same',
                                    kernel_initializer=initializer, use_bias=False))
 
         if apply_batchnorm:
-            # Normalizing activations to help gradient flow
             layer.add(tf.keras.layers.BatchNormalization())
 
         layer.add(tf.keras.layers.LeakyReLU())
@@ -88,54 +69,54 @@ class Pix2Pix():
 
     def upsample(self, filters, size, apply_dropout=False):
         initializer = tf.random_normal_initializer(0., 0.02)
-
         result = tf.keras.Sequential()
         result.add(
             tf.keras.layers.Conv2DTranspose(filters, size, strides=2,
                                             padding='same',
                                             kernel_initializer=initializer,
                                             use_bias=False))
-
         result.add(tf.keras.layers.BatchNormalization())
 
         if apply_dropout:
             result.add(tf.keras.layers.Dropout(0.5))
-
         result.add(tf.keras.layers.ReLU())
 
         return result
 
     def Generator(self):
+        kernel_size = 3
         down_stack = [
             # (bs, 128, 128, 64)
-            self.downsample(64, 4, apply_batchnorm=False),
-            self.downsample(128, 4),  # (bs, 64, 64, 128)
-            self.downsample(256, 4),  # (bs, 32, 32, 256)
-            self.downsample(512, 4),  # (bs, 16, 16, 512)
-            self.downsample(512, 4),  # (bs, 8, 8, 512)
-            self.downsample(512, 4),  # (bs, 4, 4, 512)
-            self.downsample(512, 4),  # (bs, 2, 2, 512)
-            self.downsample(512, 4),  # (bs, 1, 1, 512)
+            self.downsample(64, kernel_size, apply_batchnorm=False),
+            self.downsample(128, kernel_size),  # (bs, 64, 64, 128)
+            self.downsample(256, kernel_size),  # (bs, 32, 32, 256)
+            self.downsample(512, kernel_size),  # (bs, 16, 16, 512)
+            self.downsample(512, kernel_size),  # (bs, 8, 8, 512)
+            self.downsample(512, kernel_size),  # (bs, 4, 4, 512)
+            self.downsample(512, kernel_size),  # (bs, 2, 2, 512)
+            self.downsample(512, kernel_size),  # (bs, 1, 1, 512)
         ]
 
         up_stack = [
-            self.upsample(512, 4, apply_dropout=True),  # (bs, 2, 2, 1024)
-            self.upsample(512, 4, apply_dropout=True),  # (bs, 4, 4, 1024)
-            self.upsample(512, 4, apply_dropout=True),  # (bs, 8, 8, 1024)
-            self.upsample(512, 4),  # (bs, 16, 16, 1024)
-            self.upsample(256, 4),  # (bs, 32, 32, 512)
-            self.upsample(128, 4),  # (bs, 64, 64, 256)
-            self.upsample(64, 4),  # (bs, 128, 128, 128)
+            # (bs, 2, 2, 1024)
+            self.upsample(512, kernel_size, apply_dropout=True),
+            # (bs, 4, 4, 1024)
+            self.upsample(512, kernel_size, apply_dropout=True),
+            # (bs, 8, 8, 1024)
+            self.upsample(512, kernel_size, apply_dropout=True),
+            self.upsample(512, kernel_size),  # (bs, 16, 16, 1024)
+            self.upsample(256, kernel_size),  # (bs, 32, 32, 512)
+            self.upsample(128, kernel_size),  # (bs, 64, 64, 256)
+            self.upsample(64, kernel_size),  # (bs, 128, 128, 128)
         ]
         initializer = tf.random_normal_initializer(0., 0.02)
-        last = tf.keras.layers.Conv2DTranspose(self.OUTPUT_CHANNELS, 4,
+        last = tf.keras.layers.Conv2DTranspose(self.OUTPUT_CHANNELS, kernel_size,
                                                strides=2,
                                                padding='same',
                                                kernel_initializer=initializer,
                                                activation='tanh')  # (bs, 256, 256, 3)
 
         concat = tf.keras.layers.Concatenate()
-
         inputs = tf.keras.layers.Input(shape=[None, None, 3])
         x = inputs
 
@@ -153,7 +134,6 @@ class Pix2Pix():
             x = concat([x, skip])
 
         x = last(x)
-        # print(x)
         return tf.keras.Model(inputs=inputs, outputs=x)
 
     def Discriminator(self):
@@ -199,26 +179,13 @@ class Pix2Pix():
     def generator_loss(self, disc_generated_output, gen_output, target):
         gan_loss = tf.keras.backend.binary_crossentropy(tf.ones_like(
             disc_generated_output), disc_generated_output, from_logits=True)
-        # gan_loss = loss_object(tf.ones_like(
-        #     disc_generated_output), disc_generated_output)
-
-        # mean absolute error
         l1_loss = tf.reduce_mean(tf.abs(target - gen_output))
-
         total_gen_loss = gan_loss + (self.LAMBDA * l1_loss)
 
         return total_gen_loss
 
     def generate_images(self, model, test_input, tar, epoch, j):
-        print("Generate Image")
-        # the training=True is intentional here since
-        # we want the batch statistics while running the model
-        # on the test dataset. If we use training=False, we will get
-        # the accumulated statistics learned from the training dataset
-        # (which we don't want)
         prediction = model(tf.expand_dims(test_input, 0), training=True)
-        # plt.figure(figsize=(15, 15))
-        # print(test_input.shape)
         test_input = resize(test_input, 304, 484)
         tar = resize(tar, 304, 484)
         prediction = resize(prediction[0], 304, 484)
@@ -229,11 +196,10 @@ class Pix2Pix():
         for i in range(3):
             plt.figure()
             plt.title(title[i])
-            # getting the pixel values between [0, 1] to plot it.
             plt.imshow(display_list[i] * 0.5 + 0.5)
-            plt.axis('off')
             plt.savefig(self.train_result + "/" + str(epoch) + "_" +
                         str(j) + "_" + title[i] + ".jpg")
+            plt.close()
 
     def predict_images(self, img):
         print("Predict Image")
@@ -253,10 +219,8 @@ class Pix2Pix():
 
     def train_step(self, input_image, target):
         with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
-            # gen_output = generator(input_image, training=True)
             gen_output = self.generator(
                 tf.expand_dims(input_image, 0), training=True)
-            # tf.expand_dims(input_image,0) Inserts a dimension of 1 into a tensor's shape.
             disc_real_output = self.discriminator(
                 [tf.expand_dims(input_image, 0), tf.expand_dims(target, 0)], training=True)
             disc_generated_output = self.discriminator(
@@ -267,7 +231,6 @@ class Pix2Pix():
             disc_loss = self.discriminator_loss(
                 disc_real_output, disc_generated_output)
 
-        # print("Generator Loss:", gen_loss[0][0][0])
         generator_gradients = gen_tape.gradient(gen_loss,
                                                 self.generator.trainable_variables)
         discriminator_gradients = disc_tape.gradient(disc_loss,
@@ -278,37 +241,47 @@ class Pix2Pix():
         self.discriminator_optimizer.apply_gradients(zip(discriminator_gradients,
                                                          self.discriminator.trainable_variables))
 
-    def train(self, dataset, test_dataset, epochs, restore=False):
+        return gen_loss.numpy().mean(), disc_loss.numpy().mean()
 
-        step = 0
+    def train(self, dataset, test_dataset, epochs, file, restore=False):
+        step = 1
         if restore:
             m = tf.train.latest_checkpoint(self.checkpoint_dir)
             print("Restore from:", m)
             self.checkpoint.restore(m)
             step = int(self.checkpoint.step)
-            print("Last step:", step)
+
         for epoch in range(step, epochs):
             start = time.time()
             self.checkpoint.step.assign_add(1)
-            print("step:", int(self.checkpoint.step))
+            gen_loss_list = []
+            disc_loss_list = []
             for input_image, target in dataset:
-                self.train_step(input_image, target)
+                gen_loss, disc_loss = self.train_step(input_image, target)
+                gen_loss_list.append(gen_loss)
+                disc_loss_list.append(disc_loss)
+
             clear_output(wait=True)
-            
-            # saving (checkpoint) the model every 20 epochs
 
             checkpoint_prefix = os.path.join(
-                self.checkpoint_dir, str(int(self.checkpoint.step)) + "-ckpt")
-            if int(self.checkpoint.step) % 10 == 0:
-                self.checkpoint.save(file_prefix=checkpoint_prefix)
-            print('Model saved')
-            i = 0
-            for inp, tar in test_dataset[:10]:
-                self.generate_images(self.generator, inp, tar, epoch, i)
-                i += 1
+                self.checkpoint_dir, str(step) + "-ckpt")
 
-            print('Time taken for epoch {} is {} sec\n'.format(int(self.checkpoint.step),
-                                                               time.time()-start))
+            if step % 10 == 0:
+                self.checkpoint.save(file_prefix=checkpoint_prefix)
+                print('Model saved in epoch', step)
+                i = 0
+                for inp, tar in test_dataset[:10]:
+                    self.generate_images(self.generator, inp, tar, epoch, i)
+                    i += 1
+
+            g_loss = np.mean(gen_loss_list)
+            d_loss = np.mean(disc_loss_list)
+
+            file.write(str(step)+",%.4f" %
+                       (g_loss)+","+"%.4f" % (d_loss)+"\n")
+
+            print("Time for epoch", step, "is", "%.2f" %
+                  (time.time()-start), "G loss:", g_loss, "D loss:", d_loss)
 
     def predict(self, predict_dataset, model_file):
         self.checkpoint.restore(model_file)
@@ -326,15 +299,12 @@ def load_training_dataset():
     train_dataset = []
 
     img_dir = "./dataset/images"
-    label_dir = "./dataset/groundTruth_color_train"
+    label_dir = "./dataset/groundTruth_obj_color"
 
     label_path_list = get_file_path(label_dir)
     for label_path in label_path_list:
         name = get_file_name(label_path)
         img_path = img_dir + "/" + name + ".jpg"
-        # if os.path.exists(img_dir + "/" + name + ".jpg"):
-        # else:
-        #     img_path = img_dir + "/" + name + ".png"
 
         if not os.path.exists(img_path):
             continue
@@ -346,14 +316,13 @@ def load_training_dataset():
 
         val = tf.random.uniform(())
         if val > 0.5:
-            dataset[0] = rotation(dataset[0], degrees)
-            dataset[1] = rotation(dataset[1], degrees)
+            img_in = rotation(dataset[0], degrees)
+            img_out = rotation(dataset[1], degrees)
         else:
-            dataset[0] = rotation(dataset[0], -degrees)
-            dataset[1] = rotation(dataset[1], -degrees)
-    
+            img_in = rotation(dataset[0], -degrees)
+            img_out = rotation(dataset[1], -degrees)
 
-        # train_dataset.append(rotated)
+        dataset = (img_in, img_out)
         train_dataset.append(dataset)
 
     print("Number of training set:", len(train_dataset))
@@ -393,16 +362,24 @@ def load_predict_dataset(img_predict_dir):
 
 def main():
     tf.config.set_soft_device_placement(True)
-    # tf.debugging.set_log_device_placement(True)
     # is_train = False
     is_train = True
-    pix2pix = Pix2Pix(postfix='_obj')
+    postfix = '_obj_color'
+    pix2pix = Pix2Pix(postfix=postfix)
 
     if is_train:
         train_dataset = load_training_dataset()
         test_dataset = load_testing_dataset()
         with tf.device('/device:GPU:0'):
-            pix2pix.train(train_dataset, test_dataset, 200, False)
+            a = input("Do you want to restore model? 1 Yes 2 No")
+            if int(a) == 2:
+                is_restore = False
+            else:
+                is_restore = True
+            f = open("./loss"+postfix+".csv", "w+")
+
+            pix2pix.train(train_dataset, test_dataset, 200, f, is_restore)
+            f.close()
     else:
         model_file = "./pix2pix_checkpoints_color/50-ckpt-5"
         predict_dataset = load_predict_dataset(
