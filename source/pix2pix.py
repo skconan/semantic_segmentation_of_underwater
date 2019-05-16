@@ -203,7 +203,6 @@ class Pix2Pix():
 
     def predict_images(self, img):
         print("Predict Image")
-
         prediction = self.generator(tf.expand_dims(img, 0), training=True)
         result = (prediction[0] * 0.5 + 0.5)*255
         result = np.uint8(result)
@@ -244,14 +243,14 @@ class Pix2Pix():
         return gen_loss.numpy().mean(), disc_loss.numpy().mean()
 
     def train(self, dataset, test_dataset, epochs, file, restore=False):
-        step = 1
+        start_epoch = 1
         if restore:
             m = tf.train.latest_checkpoint(self.checkpoint_dir)
             print("Restore from:", m)
             self.checkpoint.restore(m)
-            step = int(self.checkpoint.step)
+            start_epoch = int(self.checkpoint.step)
 
-        for epoch in range(step, epochs):
+        for epoch in range(start_epoch, epochs):
             start = time.time()
             self.checkpoint.step.assign_add(1)
             gen_loss_list = []
@@ -264,11 +263,11 @@ class Pix2Pix():
             clear_output(wait=True)
 
             checkpoint_prefix = os.path.join(
-                self.checkpoint_dir, str(step) + "-ckpt")
+                self.checkpoint_dir, str(epoch) + "-ckpt")
 
-            if step % 10 == 0:
+            if epoch % 10 == 0:
                 self.checkpoint.save(file_prefix=checkpoint_prefix)
-                print('Model saved in epoch', step)
+                print('Model saved in epoch', epoch)
                 i = 0
                 for inp, tar in test_dataset[:10]:
                     self.generate_images(self.generator, inp, tar, epoch, i)
@@ -277,10 +276,10 @@ class Pix2Pix():
             g_loss = np.mean(gen_loss_list)
             d_loss = np.mean(disc_loss_list)
 
-            file.write(str(step)+",%.4f" %
+            file.write(str(epoch)+",%.4f" %
                        (g_loss)+","+"%.4f" % (d_loss)+"\n")
 
-            print("Time for epoch", step, "is", "%.2f" %
+            print("Time for epoch", epoch, "is", "%.2f" %
                   (time.time()-start), "G loss:", g_loss, "D loss:", d_loss)
 
     def predict(self, predict_dataset, model_file):
