@@ -4,7 +4,7 @@ from model import Autoencoder
 
 
 def main():
-    project_dir = "home/sk/senior_project"
+    project_dir = "/home/sk/senior_project"
     dataset_dir = project_dir + "/dataset"
 
     img_dir = dataset_dir + "/images"
