@@ -6,7 +6,7 @@ import cv2 as cv
 
 
 class MyCallback(keras.callbacks.Callback):
-    def __init__(self, X_test, img_rows=256, img_cols=256, channels=3, img_rows_result, img_cols_result, model_dir, pred_dir):
+    def __init__(self, x_test, model_dir, pred_dir, img_rows=256, img_cols=256, channels=3, img_rows_result=304, img_cols_result=484):
         self.img_rows = img_rows
         self.img_cols = img_cols
         self.channels = channels
@@ -40,12 +40,14 @@ class MyCallback(keras.callbacks.Callback):
                 pred = preds[i] * 255.
                 pred = np.uint8(pred.reshape(
                     self.img_row, self.img_col, self.channels))
-                pred = cv.resize(pred.copy(), (self.img_cols_result, self.img_rows_result))
+                pred = cv.resize(
+                    pred.copy(), (self.img_cols_result, self.img_rows_result))
 
                 x_test = self.X_test[i] * 255.
                 x_test = np.uint8(x_test.reshape(
                     self.img_row, self.img_col, self.channels))
-                x_test = cv.resize(x_test.copy(), (self.img_cols_result, self.img_rows_result))
+                x_test = cv.resize(
+                    x_test.copy(), (self.img_cols_result, self.img_rows_result))
 
                 plt.imshow(x_test)
                 plt.savefig(self.pred_dir + "/" +
