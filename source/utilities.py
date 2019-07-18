@@ -71,14 +71,13 @@ def normalize(img):
 def load_image(path, img_rows=256, img_cols=256):
     image_list = np.zeros((len(path),  img_rows, img_cols, 3))
     for i, fig in enumerate(path):
-        try:
-            img = image.load_img(fig, target_size=(img_row, img_col, 3))
-            x = image.img_to_array(img).astype('float32')
-            x = normalize(x)
-            image_list[i] = x
-        except:
-            print("error")
-            print(path[i])
+        #try:
+        img = image.load_img(fig, target_size=(img_rows, img_cols, 3))
+        x = image.img_to_array(img).astype('float32')
+        x = normalize(x)
+        image_list[i] = x
+        #except:
+         #   print("error",path[i])
         
 
     return image_list
