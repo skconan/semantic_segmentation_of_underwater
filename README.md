@@ -10,7 +10,7 @@
     
     - Second, the decoder part, we apply Conv2d > UpSampling to every layer in decoder part.
    
-  * If you want to see the summary of model [click here](https://raw.githubusercontent.com/skconan/semantic_segmentation_of_underwater/master/Screenshot%20from%202019-07-18%2022-39-28.png).
+  * Finally, we run model on Jetson TX2 with ROS Framework and publish the result to node that have 6.5 frame per second. If you want to see the summary of model [click here](https://raw.githubusercontent.com/skconan/semantic_segmentation_of_underwater/master/Screenshot%20from%202019-07-18%2022-39-28.png).
    
 
 
