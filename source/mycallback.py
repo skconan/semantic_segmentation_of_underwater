@@ -19,7 +19,7 @@ class MyCallback(keras.callbacks.Callback):
 
         self.x_test = x_test
 
-    def on_train_begin(self):
+    def on_train_begin(self, logs=None):
         self.start_time = time.time()
 
     def keep_last_models(self, n=5):
