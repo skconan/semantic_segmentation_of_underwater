@@ -17,7 +17,7 @@ class MyCallback(keras.callbacks.Callback):
         self.model_dir = model_dir
         self.pred_dir = pred_dir
 
-        self.X_test = X_test
+        self.x_test = x_test
 
     def on_train_begin(self):
         self.start_time = time.time()
@@ -43,7 +43,7 @@ class MyCallback(keras.callbacks.Callback):
                 pred = cv.resize(
                     pred.copy(), (self.img_cols_result, self.img_rows_result))
 
-                x_test = self.X_test[i] * 255.
+                x_test = self.x_test[i] * 255.
                 x_test = np.uint8(x_test.reshape(
                     self.img_row, self.img_col, self.channels))
                 x_test = cv.resize(
