@@ -4,13 +4,16 @@ from model import Autoencoder
 
 
 def main():
-    img_dir = "../dataset/images"
-    target_dir = "../dataset/groundTruth_seg_train"
-    test_dir = "../dataset/groundTruth_seg_test"
+    project_dir = "home/sk/senior_project"
+    dataset_dir = project_dir + "/dataset"
 
-    result_dir = "../cnn_ae_" + str(time.time()).split(".")[0]
-    model_dir = result_dir+"/model"
-    pred_dir = result_dir+"/predict_result"
+    img_dir = dataset_dir + "/images"
+    target_dir = dataset_dir + "/groundTruth_seg_train"
+    test_dir = dataset_dir + "/groundTruth_seg_test"
+
+    result_dir = project_dir + "/cnn_ae_" + str(time.time()).split(".")[0]
+    model_dir = result_dir + "/model"
+    pred_dir = result_dir + "/predict_result"
 
     if not os.path.exists(result_dir):
         os.mkdir(result_dir)
