@@ -11,6 +11,8 @@ import numpy as np
 import tensorflow as tf
 import colorama
 from PIL import Image
+from keras.preprocessing import image
+
 
 colorama.init()
 DEBUG = True
@@ -61,108 +63,20 @@ def get_file_name(img_path):
     return name
 
 
-def load(img_file, label_file):
-    img_in = tf.io.read_file(img_file)
-    try:
-        img = tf.image.decode_jpeg(img_in)
-    except:
-        img = tf.image.decode_png(img_in, channels=3)
-
-    in_img = img
-
-    img_in = tf.io.read_file(label_file)
-    try:
-        img = tf.image.decode_png(img_in, channels=3)
-    except:
-        img = tf.image.decode_jpeg(img_in)
-
-    out_img = img
-
-    in_img = tf.cast(in_img, tf.float32)
-    out_img = tf.cast(out_img, tf.float32)
-
-    return in_img, out_img
-
-
-def resize(img, height, width):
-    result = tf.image.resize(img, [height, width],
-                             method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-    return result
-
-
-def random_crop(in_img, out_img):
-    if (out_img.shape[2] == 1):
-        out_img = tf.image.grayscale_to_rgb(out_img)
-    stacked_image = tf.stack([in_img, out_img], axis=0)
-    cropped_image = tf.image.random_crop(
-        stacked_image, size=[2, 256, 256, 3])
-    return cropped_image[0], cropped_image[1]
-
-
 def normalize(img):
-    # normalizing the images to [-1, 1]
-    result = (img / 127.5) - 1
+    result = img / 255.
     return result
 
 
-def random_jitter(in_img, out_img):
-    # resizing to 286 x 286 x 3
-    in_img = resize(in_img, 286, 286)
-    out_img = resize(out_img, 286, 286)
+def load_image(path, img_rows, img_cols):
+    image_list = np.zeros((len(path),  img_rows, img_cols, 3))
+    for i, fig in enumerate(path):
+        try:
+            img = image.load_img(fig, target_size=(img_row, img_col, 3))
+        except:
+            print("error")
+        x = image.img_to_array(img).astype('float32')
+        x = normalize(x)
+        image_list[i] = x
 
-    # randomly cropping to 256 x 256 x 3
-    in_img, out_img = random_crop(in_img, out_img)
-
-    val = tf.random.uniform(())
-    if val > 0.5:
-        # random mirroring
-        in_img = tf.image.flip_left_right(in_img)
-        out_img = tf.image.flip_left_right(out_img)
-
-    return in_img, out_img
-
-
-def load_image_train(img_file, label_file):
-    in_img, out_img = load(img_file, label_file)
-    in_img, out_img = random_jitter(in_img, out_img)
-
-    in_img = normalize(in_img)
-    out_img = normalize(out_img)
-    return in_img, out_img
-
-
-def load_image_test(img_file, label_file):
-    in_img, out_img = load(img_file, label_file)
-
-    in_img = resize(in_img, 256, 256)
-    out_img = resize(out_img, 256, 256)
-
-    in_img = normalize(in_img)
-    out_img = normalize(out_img)
-
-    return in_img, out_img
-
-
-def load_image_predict(img_file):
-    img = tf.io.read_file(img_file)
-    img = tf.image.decode_jpeg(img)
-    in_img = img
-
-    in_img = tf.cast(in_img, tf.float32)
-
-    in_img = resize(in_img, 256, 256)
-    in_img = normalize(in_img)
-
-    return in_img
-
-
-def rotation(img_tensor, degrees):
-    img = np.uint8((img_tensor*0.5+0.5)*255)
-    img = Image.fromarray(img)
-    rotated = Image.Image.rotate(img, degrees)
-    rotated = rotated.resize((280, 280))
-    rotated = rotated.crop((12, 12, 268, 268))
-
-    tensor = tf.convert_to_tensor(np.float32(rotated))
-    tensor = normalize(tensor)
-    return tensor
+    return image_list
