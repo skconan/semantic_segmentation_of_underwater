@@ -53,14 +53,15 @@
 
 * [Github robin-gpu](https://github.com/skconan/drawing_web_app)
 
-## Contact
-
-* email: supakit.kr@gmail.com
-* [Linkedin](https://www.linkedin.com/in/skconan/)
-
 ## Reference
 
 [neural network](https://medium.com/@sanparithmarukatat/สนุกกับ-neural-network-657fa293c4d1)
 [A Comprehensive Introduction to Different Types of Convolutions in Deep Learning](https://towardsdatascience.com/a-comprehensive-introduction-to-different-types-of-convolutions-in-deep-learning-669281e58215)
+
+
+## Contact
+
+* email: supakit.kr@gmail.com
+* [Linkedin](https://www.linkedin.com/in/skconan/)
 
 
