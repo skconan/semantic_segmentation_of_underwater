@@ -4,11 +4,11 @@ from model import Autoencoder
 
 
 def main():
-    img_dir = "./dataset/images"
-    target_dir = "./dataset/groundTruth_seg_train"
-    test_dir = "./dataset/groundTruth_seg_test"
+    img_dir = "../dataset/images"
+    target_dir = "../dataset/groundTruth_seg_train"
+    test_dir = "../dataset/groundTruth_seg_test"
 
-    result_dir = "./cnn_ae_" + str(time.time()).split(".")[0]
+    result_dir = "../cnn_ae_" + str(time.time()).split(".")[0]
     model_dir = result_dir+"/model"
     pred_dir = result_dir+"/predict_result"
 
