@@ -1,31 +1,58 @@
+import keras
+import time
+from utilities import *
+import matplotlib.pyplot as plt
+import cv2 as cv
+
+
 class MyCallback(keras.callbacks.Callback):
-    def on_train_begin(self, logs=None):
-    
+    def __init__(self, X_test, img_rows=256, img_cols=256, channels=3, img_rows_result, img_cols_result, model_dir, pred_dir):
+        self.img_rows = img_rows
+        self.img_cols = img_cols
+        self.channels = channels
+
+        self.img_rows_result = img_rows_result
+        self.img_cols_result = img_cols_result
+
+        self.model_dir = model_dir
+        self.pred_dir = pred_dir
+
+        self.X_test = X_test
+
+    def on_train_begin(self):
         self.start_time = time.time()
 
+    def keep_last_models(self, n=5):
+        model_list = get_file_path(self.model_dir)
+        if len(model_list) > n:
+            model_list = sorted(model_list, reverse=True)
+            for m_path in model_list[n:]:
+                os.remove(m_path)
+                print("remove " + m_path)
+
     def on_epoch_end(self, epoch, logs=None):
-        print('Training: epoch {} ends at {}'.format(epoch, time.time() - self.start_time))
+        print('Training: epoch {} ends at {}'.format(
+            epoch, (time.time() - self.start_time)/60.))
         if epoch % 20 == 0:
-            model_path = result_dir + "/model"
-            model_list = get_file_path(model_path)
-            if len(model_list) > 5:
-                model_list = sorted(model_list, reverse=True)
-                for m_path in model_list[5:]:
-                    os.remove(m_path)
-                    print("remove " + m_path)
-            preds = self.model.predict(x_test)
-            for i in range(10):
-                preds_0 = preds[i] * 255.
-       
-                preds_0 = np.uint8(preds_0.reshape(img_row, img_col, 3))
-                preds_0 = cv.resize(preds_0.copy(), (484,304))
-                x_test_0 = x_test[i] * 255.
-         
-                x_test_0 = np.uint8(x_test_0.reshape(img_row, img_col, 3))
-                x_test_0 = cv.resize(x_test_0.copy(), (484,304))
-                plt.imshow(x_test_0)
-                plt.savefig(result_dir + "/predict_result/" + str(epoch) + "_" + str(i) + "_a _test.jpg")
+            preds = self.model.predict(self.x_test)
+
+            for i in range(len(preds)):
+                pred = preds[i] * 255.
+                pred = np.uint8(pred.reshape(
+                    self.img_row, self.img_col, self.channels))
+                pred = cv.resize(pred.copy(), (self.img_cols_result, self.img_rows_result))
+
+                x_test = self.X_test[i] * 255.
+                x_test = np.uint8(x_test.reshape(
+                    self.img_row, self.img_col, self.channels))
+                x_test = cv.resize(x_test.copy(), (self.img_cols_result, self.img_rows_result))
+
+                plt.imshow(x_test)
+                plt.savefig(self.pred_dir + "/" +
+                            str(epoch) + "_" + str(i) + "_a _test.jpg")
                 plt.close()
-                plt.imshow(preds_0)
-                plt.savefig(result_dir + "/predict_result/" + str(epoch) + "_" + str(i) + "_b_pred.jpg")
+
+                plt.imshow(pred)
+                plt.savefig(self.pred_dir + "/" +
+                            str(epoch) + "_" + str(i) + "_b_pred.jpg")
                 plt.close()
