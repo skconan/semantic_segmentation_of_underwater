@@ -68,7 +68,7 @@ def normalize(img):
     return result
 
 
-def load_image(path, img_rows, img_cols):
+def load_image(path, img_rows=256, img_cols=256):
     image_list = np.zeros((len(path),  img_rows, img_cols, 3))
     for i, fig in enumerate(path):
         try:
