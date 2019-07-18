@@ -105,7 +105,7 @@ class Autoencoder:
         plt.xlabel('Epoch')
         plt.legend(['Train', 'Test'], loc='upper left')
         plt.show()
-        plt.savefig(result_dir + "/graph.jpg")
+        plt.savefig(self.pred_dir + "/graph.jpg")
         plt.close()
 
     def eval_model(self, x_test):
