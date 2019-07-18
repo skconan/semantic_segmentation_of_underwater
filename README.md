@@ -18,6 +18,7 @@
 **[Hardware](#hardware)**<br>
 **[Software](#software)**<br>
 **[Libraries](#libraries)**<br>
+**[Files](#files)**<br>
 
 ## Hardware
 
@@ -37,7 +38,7 @@
 * Numpy
 * Matplot
 
-## Python files
+## Files 
 
 * [model.py](https://github.com/skconan/semantic_segmentation_of_underwater/blob/master/source/model.py) - create structure of model.
 
