@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-    File name: semantic_segmentation.py
+    File name: semantic_segmentation_ae.py
     Author: skconan
     Date created: 2019/07/13
     Python Version: 3.6
@@ -16,7 +16,7 @@ import cv2 as cv
 
 from keras.preprocessing import image
 from keras.models import Model
-from keras.optimizers import Adam, SGD
+from keras.optimizers import SGD
 from keras.callbacks import EarlyStopping
 from keras.layers import Input, Dense, Activation, BatchNormalization, Flatten, Conv2D, LeakyReLU, SeparableConv2D
 from keras.layers import MaxPooling2D, Dropout, UpSampling2D, Dropout
@@ -87,7 +87,7 @@ print(x_train.shape, x_test.shape)
 
 class MyCallback(keras.callbacks.Callback):
     def on_train_begin(self, logs=None):
-        # print('Training: batch {} begins at {}'.format(batch, datetime.datetime.now().time()))
+    
         self.start_time = time.time()
 
     def on_epoch_end(self, epoch, logs=None):
@@ -103,11 +103,11 @@ class MyCallback(keras.callbacks.Callback):
             preds = self.model.predict(x_test)
             for i in range(10):
                 preds_0 = preds[i] * 255.
-                # preds_0 = preds[i] * 127.5 + 127.5
+       
                 preds_0 = np.uint8(preds_0.reshape(img_row, img_col, 3))
                 preds_0 = cv.resize(preds_0.copy(), (484,304))
                 x_test_0 = x_test[i] * 255.
-                # x_test_0 = x_test[i] * 127.5 + 127.5
+         
                 x_test_0 = np.uint8(x_test_0.reshape(img_row, img_col, 3))
                 x_test_0 = cv.resize(x_test_0.copy(), (484,304))
                 plt.imshow(x_test_0)
@@ -119,18 +119,6 @@ class MyCallback(keras.callbacks.Callback):
 
 
 
-# def train_val_split(x_train, y_train):
-#     rnd = np.random.RandomState(seed=42)
-#     perm = rnd.permutation(len(x_train))
-#     train_idx = perm[:int(0.9 * len(x_train))]
-#     val_idx = perm[int(0.9 * len(x_train)):]
-#     return x_train[train_idx], y_train[train_idx], x_train[val_idx], y_train[val_idx]
-
-
-# x_train, y_train, x_val, y_val = train_val_split(x_train, y_train)
-# print(x_train.shape, x_val.shape)
-
-
 class Autoencoder():
     def __init__(self):
         self.img_rows = img_row
@@ -139,57 +127,42 @@ class Autoencoder():
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
 
         sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-        # sgd = SGD(lr=0.0001, decay=1e-6, momentum=0.5, nesterov=True) not work
 
-        # sgd = SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True) work
-        # optimizer = Adam(lr=1e-6) work
 
         self.autoencoder_model = self.build_model()
         self.autoencoder_model.compile(loss='mse', optimizer=sgd, metrics = ['acc'])
-        # self.autoencoder_model.compile(loss='mse', optimizer=optimizer, metrics = ['acc'])
+  
         self.autoencoder_model.summary()
 
     def build_model(self):
         input_layer = Input(shape=(img_row, img_col, 3))
 
-        x = Conv2D(64, (3, 3), padding='same',
+        x = Conv2D(128, (3, 3), padding='same',
                    name='Down_Conv1_1')(input_layer)
         x = BatchNormalization()(x)
         x = Activation('relu')(x)        
-        # x = Conv2D(64, (3, 3),
-        #            padding='same', name='Down_Conv1_2')(x)
-        # x = BatchNormalization()(x)
-        # x = Activation('relu')(x)        
+        
         x = MaxPooling2D((2, 2), name='pool1')(x)
 
         x = Conv2D(128, (3, 3),
                    padding='same', name='Down_Conv2_1')(x)
         x = BatchNormalization()(x)
         x = Activation('relu')(x)        
-        # x = Conv2D(128, (3, 3),
-        #            padding='same', name='Down_Conv2_2')(x)
-        # x = BatchNormalization()(x)
-        # x = Activation('relu')(x)        
+        
         x = MaxPooling2D((2, 2), name='pool2')(x)
 
         x = Conv2D(256, (3, 3),
                    padding='same', name='Down_Conv3_1')(x)
         x = BatchNormalization()(x)
         x = Activation('relu')(x)        
-        # x = Conv2D(256, (3, 3),
-        #            padding='same', name='Down_Conv3_2')(x)
-        # x = BatchNormalization()(x)
-        # x = Activation('relu')(x)        
+      
         x = MaxPooling2D((2, 2), name='pool3')(x)
 
         x = Conv2D(512, (3, 3),
                    padding='same', name='Down_Conv4_1')(x)
         x = BatchNormalization()(x)
         x = Activation('relu')(x)        
-        # x = Conv2D(512, (3, 3),
-        #            padding='same', name='Down_Conv4_2')(x)
-        # x = BatchNormalization()(x)
-        # x = Activation('relu')(x)        
+       
         
         x = Dropout(0.3)(x)
 
@@ -197,8 +170,7 @@ class Autoencoder():
 
         x = Conv2D(1024, (3, 3),
                    padding='same', name='Mid_Conv1_1')(x)
-        # x = Conv2D(1024, (3, 3),
-        #            padding='same', name='Mid_Conv1_2')(x)
+    
         x = BatchNormalization()(x)
         x = Activation('relu')(x)        
 
@@ -208,36 +180,23 @@ class Autoencoder():
 
         x = Conv2D(512, (3, 3), activation='relu',
                    padding='same', name='Up_Conv1_1')(x)
-        # x = BatchNormalization()(x)                
-        x = UpSampling2D((2, 2))(x)
-        # x = Conv2D(512, (3, 3), activation='relu',
-        #            padding='same', name='Up_Conv1_2')(x)
-        # x = BatchNormalization()(x)                
+                
 
 
         x = Conv2D(256, (3, 3), activation='relu',
                    padding='same', name='Up_Conv2_1')(x)
-        # x = BatchNormalization()(x)                
-        # x = Conv2D(256, (3, 3), activation='relu',
-        #            padding='same', name='Up_Conv2_2')(x)
-        # x = BatchNormalization()(x)                
+            
         x = UpSampling2D((2, 2))(x)
 
         x = Conv2D(128, (3, 3), activation='relu',
                    padding='same', name='Up_Conv3_1')(x)
-        # x = BatchNormalization()(x)                
-        # x = Conv2D(128, (3, 3), activation='relu',
-        #            padding='same', name='Up_Conv3_2')(x)
-        # x = BatchNormalization()(x)                
+                 
         x = UpSampling2D((2, 2))(x)
 
 
-        x = Conv2D(64, (3, 3), activation='relu',
+        x = Conv2D(128, (3, 3), activation='relu',
                    padding='same', name='Up_Conv4_1')(x)
-        # x = BatchNormalization()(x)                
-        # x = Conv2D(64, (3, 3), activation='relu',
-        #            padding='same', name='Up_Conv4_2')(x)
-        # x = BatchNormalization()(x)                
+           
         x = UpSampling2D((2, 2))(x)
 
         output_layer = Conv2D(
@@ -251,11 +210,8 @@ class Autoencoder():
                                        patience=5,
                                        verbose=1,
                                        mode='auto')
-        # filepath = result_dir + "epoch/model-{epoch:02d}-{val_acc:.2f}.hdf5"
-        # checkpoint_20_epoch = ModelCheckpoint(filepath, monitor='val_loss', verbose=1,
-        #                              save_best_only=False, save_weights_only=False, mode='auto', period=20)
-        
-        filepath = result_dir +  "/model/model-{epoch:02d}-{val_loss:.2f}.hdf5"
+
+        filepath = result_dir +  "/model/model-{epoch:02d}-{val_loss:.4f}.hdf5"
         checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1,
                                      save_best_only=True, save_weights_only=False, mode='min')
         my_callback = MyCallback()
@@ -269,15 +225,15 @@ class Autoencoder():
                                              validation_data=(x_val, y_val),
                                              callbacks=callbacks_list
                                              )
-        plt.plot(history.history['loss'])
-        plt.plot(history.history['val_loss'])
-        plt.title('Model loss')
-        plt.ylabel('Loss')
-        plt.xlabel('Epoch')
-        plt.legend(['Train', 'Test'], loc='upper left')
-        plt.show()
-        plt.savefig(result_dir + "/graph.jpg")
-        plt.close()
+        # plt.plot(history.history['loss'])
+        # plt.plot(history.history['val_loss'])
+        # plt.title('Model loss')
+        # plt.ylabel('Loss')
+        # plt.xlabel('Epoch')
+        # plt.legend(['Train', 'Test'], loc='upper left')
+        # plt.show()
+        # plt.savefig(result_dir + "/graph.jpg")
+        # plt.close()
 
     def eval_model(self, x_test):
         preds = self.autoencoder_model.predict(x_test)
@@ -290,24 +246,3 @@ class Autoencoder():
 
 ae = Autoencoder()
 ae.train_model(x_train, y_train, x_val, y_val, epochs=3000, batch_size=10)
-
-# img_row = 304
-# img_col = 484
-
-# preds = ae.eval_model(x_test)
-# for i in range(10):
-#     preds_0 = preds[i] * 255.
-#     # preds_0 = preds[i] * 127.5 + 127.5
-#     preds_0 = np.uint8(preds_0.reshape(img_row, img_col, 3))
-#     x_test_0 = x_test[i] * 255.
-#     # x_test_0 = x_test[i] * 127.5 + 127.5
-#     x_test_0 = np.uint8(x_test_0.reshape(img_row, img_col, 3))
-#     x_test_0 = cv.resize(x_test_0.copy(), (304, 484))
-
-#     plt.imshow(x_test_0)
-#     plt.savefig(result_dir + "/predict_result/" + str(i) + "_a_test.jpg")
-#     plt.close()
-#     plt.imshow(preds_0)
-#     plt.savefig(result_dir + "/predict_result/" + str(i) + "_b_pred.jpg")
-#     plt.close()
-ae.save(result_dir + "/model_last_epoch.h5")
