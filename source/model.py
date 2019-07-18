@@ -39,11 +39,11 @@ class Autoencoder:
     def downsampling(self, input_layer, number_of_filter, dropout=False, maxpooling=True):
         x = Conv2D(number_of_filter, (3, 3), padding='same')(input_layer)
         x = BatchNormalization()(x)
-        if maxpooling:
-            x = Activation('relu')(x)
+        x = Activation('relu')(x)
         if dropout:
             x = Dropout(0.3)(x)
-        x = MaxPooling2D((2, 2))(x)
+        if maxpooling:
+            x = MaxPooling2D((2, 2))(x)
 
         return x
 
