@@ -53,6 +53,10 @@
 
 * [Github robin-gpu](https://github.com/skconan/drawing_web_app)
 
+## Contact
+
+* email: supakit.kr@gmail.com
+* [Linkedin](https://www.linkedin.com/in/skconan/)
 
 Knowledge
 
