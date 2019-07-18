@@ -77,6 +77,7 @@ def load_image(path, img_rows=256, img_cols=256):
             x = normalize(x)
             image_list[i] = x
         except:
+            print(path)
             print("error")
         
 
