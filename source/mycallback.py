@@ -39,13 +39,13 @@ class MyCallback(keras.callbacks.Callback):
             for i in range(len(preds)):
                 pred = preds[i] * 255.
                 pred = np.uint8(pred.reshape(
-                    self.img_row, self.img_col, self.channels))
+                    self.img_rows, self.img_cols, self.channels))
                 pred = cv.resize(
                     pred.copy(), (self.img_cols_result, self.img_rows_result))
 
                 x_test = self.x_test[i] * 255.
                 x_test = np.uint8(x_test.reshape(
-                    self.img_row, self.img_col, self.channels))
+                    self.img_rows, self.img_cols, self.channels))
                 x_test = cv.resize(
                     x_test.copy(), (self.img_cols_result, self.img_rows_result))
 
