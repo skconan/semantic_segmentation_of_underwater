@@ -1,4 +1,4 @@
-# Senior_project
+# semantic_segmentation_of_underwater for Robosub 2019
 
 ## Table of Contents
 **[Hardware](#hardware)**<br>
@@ -9,6 +9,7 @@
 
 * uEye Industrial Cameras [**UI-3260CP Rev.2**](https://en.ids-imaging.com/store/ui-3260cp-rev-2.html)
 * Kowa C-Mount 6mm
+* Jetson TX2
 
 ## Software
 
@@ -17,6 +18,7 @@
 ## Libraries 
 
 * Tensorflow
+* Keras
 * OpenCV
 * Numpy
 * Matplot
