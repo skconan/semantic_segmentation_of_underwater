@@ -1,5 +1,19 @@
 # Semantic Segmentation of Underwater For Robosub 2019
 
+  * This project, We apply deep learning to underwater images dataset for classify class of each pixel of an image that called "Semantic Segmentaion". 
+  
+  * The dataset consist of the underwater image (3 Channels) from Chulabhorn Walailak Swimming Pool at Kasetsart University and Robosub competition at San Diego, CA, USA. 
+  
+  * Ours model based on conventional autoencoder that have 2 important part. 
+  
+    - First, the encoder part, we apply Conv2D > BatchNorm > ReLU > Maxpooling (downsampling) and apply Dropout in 2 last layer of encoder part.
+    
+    - Second, the decoder part, we apply Conv2d > UpSampling to every layer in decoder part.
+   
+  * If you want to see the summary of model [click here](https://raw.githubusercontent.com/skconan/semantic_segmentation_of_underwater/master/Screenshot%20from%202019-07-18%2022-39-28.png).
+   
+
+
 ## Table of Contents
 **[Hardware](#hardware)**<br>
 **[Software](#software)**<br>
@@ -22,6 +36,14 @@
 * OpenCV
 * Numpy
 * Matplot
+
+## Python files
+
+* [model.py](https://github.com/skconan/semantic_segmentation_of_underwater/blob/master/source/model.py) - create structure of model.
+
+* [mycallback.py](https://github.com/skconan/semantic_segmentation_of_underwater/blob/master/source/mycallback.py) - create callback for handle the model saving and save image while training.
+
+* [train.py](https://github.com/skconan/semantic_segmentation_of_underwater/blob/master/source/train.py) - read image file and divide the training and validation set.
 
 Website: [robin-gpu](https://robin-gpu.cpe.ku.ac.th:8000/)
 
