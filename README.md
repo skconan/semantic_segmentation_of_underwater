@@ -1,4 +1,4 @@
-# Semantic Segmentation of Underwater For Robosub 2019
+# Underwater Semantic Segmentation For Robosub 2019
 
   * This project, We apply deep learning to underwater images dataset for classify class of each pixel of an image that called "Semantic Segmentaion". 
   
