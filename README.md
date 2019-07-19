@@ -51,7 +51,7 @@
 
 * [robin-gpu](https://robin-gpu.cpe.ku.ac.th:8000/) - This website use for sampling images from video file and label the groundTruth images.
 
-* [Github robin-gpu](https://github.com/skconan/drawing_web_app)
+* [Github robin-gpu](https://github.com/skconan/robin_cv_web)
 
 ## Reference
 
