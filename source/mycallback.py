@@ -33,6 +33,7 @@ class MyCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         print('Training: epoch {} ends at {}'.format(
             epoch, (time.time() - self.start_time)/60.))
+        self.keep_last_models()
         if epoch % 20 == 0:
             preds = self.model.predict(self.x_test)
 
