@@ -7,9 +7,9 @@ def main():
     project_dir = "/home/sk/senior_project"
     dataset_dir = project_dir + "/dataset"
 
-    img_dir = dataset_dir + "/images"
-    target_dir = dataset_dir + "/groundTruth_seg_train"
-    test_dir = dataset_dir + "/groundTruth_seg_test"
+    img_dir = dataset_dir + "/images_pool"
+    target_dir = dataset_dir + "/groundTruth_seg_pool_train"
+    test_dir = dataset_dir + "/groundTruth_seg_pool_test"
 
     result_dir = project_dir + "/cnn_ae_" + str(time.time()).split(".")[0]
     model_dir = result_dir + "/model"
@@ -54,7 +54,7 @@ def main():
     y_val = load_image(VAL_TARGET_IMAGES)
 
     ae = Autoencoder(model_dir=model_dir, pred_dir=pred_dir)
-    ae.train_model(x_train, y_train, x_val, y_val, epochs=1000, batch_size=10)
+    ae.train_model(x_train, y_train, x_val, y_val, epochs=2000, batch_size=10)
 
     
 if __name__ == "__main__":
