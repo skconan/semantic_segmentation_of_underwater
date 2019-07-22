@@ -12,6 +12,7 @@ import numpy as np
 from utilities import *
 import cv2 as cv
 
+
 def img2csv(dir_path):
     img_path_list = get_file_path(dir_path)
     f = open("./data.csv","w+")
@@ -21,21 +22,17 @@ def img2csv(dir_path):
         _,mask = cv.threshold(
           img, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU
         )
-        mask = cv.resize(mask,(121,76))
-        # cv.imshow("mask",mask)
-        # cv.waitKey(10)
+        mask = cv.resize(mask,(242,152))
         if "gate" in img_path:
-            d = np.array([0],np.uint8)
+            d = np.array(["gate"])
         elif "buoy" in img_path:
-            d = np.array([1],np.uint8)
+            d = np.array(["bouy"])
         else:
-            d = np.array([2],np.uint8)
-        d = np.concatenate((d,img.ravel()/255.))
+            d = np.array(["none"])
+        d = np.concatenate((d,mask.ravel()/255.))
         d = ", ".join(map(str, d))
         d += "\n" 
         f.write(d)
-    # data = np.array(data)
-    # np.savetxt("./data.csv", data, delimiter=",")
     f.close()
 
 def get_dataset(csv_file):
@@ -46,24 +43,25 @@ def get_dataset(csv_file):
     test_data_x = []
     test_data_y = []
 
-    dataset = pd.read_csv(csv_file, header=None)
-    array = np.array(dataset)
+    f = open(csv_file,"r+")
 
-    for d in array:
+    for d in f.readlines():
+        d = d.split(",")
         x = d[1:]
         y = d[0]
-   
+        
         if random.uniform(0, 1) <= .7:
             train_data_x.append(x)
             train_data_y.append(y)
         else:
             test_data_x.append(x)
             test_data_y.append(y)
-
+    print("collected data")
+    
     return train_data_x, \
         train_data_y, \
         test_data_x, \
         test_data_y
 
-if __name__ == "__main__":
-    img2csv("/home/skconan/imgs/labeled")    
+# if __name__ == "__main__":
+#     img2csv("/home/skconan/imgs/labeled")    
