@@ -38,14 +38,24 @@
 * OpenCV
 * Numpy
 * Matplot
+* Scikit Learn
 
-## Training Files 
+## Files
+
+### Semantic Segmentation
 
 * [model.py](https://github.com/skconan/semantic_segmentation_of_underwater/blob/master/source/model.py) - create structure of model.
 
 * [mycallback.py](https://github.com/skconan/semantic_segmentation_of_underwater/blob/master/source/mycallback.py) - create callback for handle the model saving and save image while training.
 
 * [train.py](https://github.com/skconan/semantic_segmentation_of_underwater/blob/master/source/train.py) - read image file and divide the training and validation set.
+
+### Random Forest Classification
+
+* [model_predict_obj.py](https://github.com/skconan/underwater_semantic_segmentation/blob/master/source/model_predict_obj.py) - create model and trianing.
+
+* [data_preprocessing.py](https://github.com/skconan/underwater_semantic_segmentation/blob/master/source/data_preprocessing.py) - convert img to csv file and read csv file for training.
+
 
 ## Execution model
 
