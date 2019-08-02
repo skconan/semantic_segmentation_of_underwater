@@ -12,7 +12,7 @@ import time
 from utilities import *
 
 from keras.models import Model
-from keras.optimizers import SGD
+from keras.optimizers import SGD, Adam, RMSprop
 from keras.callbacks import EarlyStopping
 from keras.layers import Input, Activation, BatchNormalization, Conv2D, MaxPooling2D, Dropout, UpSampling2D
 from keras.callbacks import ModelCheckpoint
@@ -28,11 +28,14 @@ class Autoencoder:
         self.model_dir = model_dir
         self.pred_dir = pred_dir
 
-        sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-
+        #adm = Adam(lr=1e-3, beta_1=0.9, beta_2=0.999, epsilon=None, decay=1e-6, amsgrad=True)
+        sgd = SGD(lr=0.01, decay=1e-4, momentum=0.9, nesterov=True)
+        #sgd = SGD(lr=0.01, decay=1e-7, momentum=0.1, nesterov=True)
+        #sgd = SGD(lr=0.01, decay=1e-3, momentum=0.8, nesterov=True)
+        rms = RMSprop(lr=0.0001, rho=0.9, epsilon=None, decay=1e-6)        
         self.autoencoder_model = self.build_model()
         self.autoencoder_model.compile(
-            loss='mse', optimizer=sgd, metrics=['acc'])
+            loss='mse', optimizer=rms, metrics=['acc'])
 
         self.autoencoder_model.summary()
 
@@ -41,7 +44,7 @@ class Autoencoder:
         x = BatchNormalization()(x)
         x = Activation('relu')(x)
         if dropout:
-            x = Dropout(0.3)(x)
+            x = Dropout(0.5)(x)
         if maxpooling:
             x = MaxPooling2D((2, 2))(x)
 
@@ -82,7 +85,7 @@ class Autoencoder:
                                        verbose=1,
                                        mode='auto')
 
-        filepath = self.model_dir + "/model-{epoch:02d}-{val_loss:.4f}.hdf5"
+        filepath = self.model_dir + "/model-{epoch:03d}-{val_loss:.4f}.hdf5"
 
         checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1,
                                      save_best_only=True, save_weights_only=False, mode='min')
