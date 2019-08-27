@@ -1,5 +1,12 @@
 # Underwater Semantic Segmentation For Robosub 2019
 
+<p align="center">
+<img src="https://raw.githubusercontent.com/skconan/underwater_semantic_segmentation/master/eg00.gif" width="489" />
+</p>
+<p align="center">
+<img src="https://raw.githubusercontent.com/skconan/underwater_semantic_segmentation/master/eg02.gif" width="489" />
+</p>
+
   * This project, We apply deep learning to underwater images dataset for classify class of each pixel of an image that called "Semantic Segmentaion". 
   
   * The dataset consist of the underwater image (3 Channels) from Chulabhorn Walailak Swimming Pool at Kasetsart University and Robosub competition at San Diego, CA, USA. 
