@@ -78,7 +78,7 @@
 
 [neural network](https://medium.com/@sanparithmarukatat/สนุกกับ-neural-network-657fa293c4d1)
 [A Comprehensive Introduction to Different Types of Convolutions in Deep Learning](https://towardsdatascience.com/a-comprehensive-introduction-to-different-types-of-convolutions-in-deep-learning-669281e58215)
-
+[BatchNormalize](https://towardsdatascience.com/batch-normalization-in-neural-networks-1ac91516821c)
 
 ## Contact
 
